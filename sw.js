@@ -1,41 +1,56 @@
-// CẬP NHẬT: Phiên bản v5
-const CACHE_NAME = 'order-manager-v5'; // Đổi v4 -> v5
-
-const urlsToCache = [
+// Đặt tên phiên bản cache - thay đổi số này khi bạn sửa code lớn
+const CACHE_NAME = 'burger-app-v12-settings'; 
+const ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './icon-192.png',
-  './icon-512.png',
   'https://cdn.tailwindcss.com'
 ];
 
-self.addEventListener('install', event => {
-  self.skipWaiting();
+// 1. Cài đặt Service Worker và Cache tài nguyên
+self.addEventListener('install', (event) => {
+  self.skipWaiting(); // Kích hoạt ngay lập tức, không chờ
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
-  );
-});
-
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => response || fetch(event.request))
-  );
-});
-
-self.addEventListener('activate', event => {
-  const cacheWhitelist = [CACHE_NAME];
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
+    caches.open(CACHE_NAME).then((cache) => {
+      console.log('Đã cache các file gốc');
+      return cache.addAll(ASSETS);
     })
+  );
+});
+
+// 2. Kích hoạt và Xóa cache cũ (Quan trọng để tránh lỗi tương thích)
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keyList) => {
+      return Promise.all(keyList.map((key) => {
+        if (key !== CACHE_NAME) {
+          console.log('Xóa cache cũ:', key);
+          return caches.delete(key);
+        }
+      }));
+    })
+  );
+  self.clients.claim();
+});
+
+// 3. Chiến lược: Network First (Ưu tiên mạng, mất mạng mới dùng Cache)
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        // Nếu có mạng: Trả về dữ liệu mới nhất VÀ lưu vào cache
+        if (!response || response.status !== 200 || response.type !== 'basic') {
+          return response;
+        }
+        const responseToCache = response.clone();
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, responseToCache);
+        });
+        return response;
+      })
+      .catch(() => {
+        // Nếu mất mạng: Lấy từ cache ra dùng
+        return caches.match(event.request);
+      })
   );
 });

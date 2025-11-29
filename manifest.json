@@ -1,23 +1,21 @@
 {
-  "short_name": "QL Đơn",
-  "name": "Trình Quản lý Đơn Hàng",
-  "description": "Ứng dụng quản lý đơn hàng burger với tính năng tự động lưu.",
+  "name": "Quản Lý Burger",
+  "short_name": "Tính tiền",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "description": "Ứng dụng tính toán kho và doanh thu",
   "icons": [
     {
-      "src": "icon-192.png",
-      "type": "image/png",
+      "src": "https://cdn-icons-png.flaticon.com/512/3075/3075977.png",
       "sizes": "192x192",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
-      "src": "icon-512.png",
-      "type": "image/png",
+      "src": "https://cdn-icons-png.flaticon.com/512/3075/3075977.png",
       "sizes": "512x512",
-      "purpose": "any maskable"
+      "type": "image/png"
     }
-  ],
-  "start_url": ".",
-  "display": "standalone",
-  "theme_color": "#ffffff",
-  "background_color": "#f3f4f6"
+  ]
 }

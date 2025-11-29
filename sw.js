@@ -1,5 +1,5 @@
 // Đặt tên phiên bản cache - thay đổi số này khi bạn sửa code lớn
-const CACHE_NAME = 'burger-app-v12-settings'; 
+const CACHE_NAME = 'burger-app-v14-address-update'; 
 const ASSETS = [
   './',
   './index.html',
@@ -18,7 +18,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// 2. Kích hoạt và Xóa cache cũ (Quan trọng để tránh lỗi tương thích)
+// 2. Kích hoạt và Xóa cache cũ
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keyList) => {
@@ -33,12 +33,11 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// 3. Chiến lược: Network First (Ưu tiên mạng, mất mạng mới dùng Cache)
+// 3. Chiến lược: Network First
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // Nếu có mạng: Trả về dữ liệu mới nhất VÀ lưu vào cache
         if (!response || response.status !== 200 || response.type !== 'basic') {
           return response;
         }
@@ -49,7 +48,6 @@ self.addEventListener('fetch', (event) => {
         return response;
       })
       .catch(() => {
-        // Nếu mất mạng: Lấy từ cache ra dùng
         return caches.match(event.request);
       })
   );

@@ -70,7 +70,7 @@
             transform: translateY(0);
         }
         
-        /* Settings Input */
+        /* Settings Input - Đã sửa lỗi hiển thị */
         .price-input {
             border: 1px solid #e5e7eb;
             border-radius: 6px;
@@ -79,6 +79,24 @@
             text-align: right;
             font-weight: bold;
             color: #2563eb;
+        }
+        
+        /* Address Chips */
+        .chip {
+            white-space: nowrap;
+            padding: 4px 10px;
+            border-radius: 99px;
+            font-size: 12px;
+            font-weight: 600;
+            background-color: #f3f4f6;
+            color: #4b5563;
+            border: 1px solid #e5e7eb;
+            transition: all 0.2s;
+        }
+        .chip:active, .chip.active {
+            background-color: #eff6ff;
+            color: #2563eb;
+            border-color: #bfdbfe;
         }
     </style>
 </head>
@@ -124,6 +142,7 @@
 
             <div id="result-section" class="hidden mt-6 mb-2">
                 <div class="bg-white rounded-xl border border-blue-100 shadow-sm overflow-hidden">
+                    <!-- Tổng Tiền -->
                     <div class="bg-blue-50 p-4 border-b border-blue-100 flex justify-between items-center">
                         <div>
                             <div class="text-xs font-bold text-blue-800 uppercase opacity-70">Tổng Doanh Thu</div>
@@ -132,7 +151,32 @@
                         </div>
                         <button id="save-btn" class="bg-yellow-400 text-yellow-900 text-xs font-bold py-2 px-3 rounded-lg shadow-sm active:scale-95 active:bg-yellow-500 transition">Lưu Phiếu</button>
                     </div>
-                    <div class="p-3">
+
+                    <!-- Phần Thanh Toán & Copy Mới -->
+                    <div class="p-4 bg-white border-b border-gray-100">
+                        <div class="grid grid-cols-2 gap-4 mb-3">
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Địa chỉ</label>
+                                <input type="text" id="bill-address" class="w-full border border-gray-200 bg-gray-50 rounded-lg p-2 text-sm font-bold text-gray-700 focus:bg-white focus:border-blue-500 outline-none" placeholder="Chọn hoặc nhập...">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Chuyển khoản</label>
+                                <input type="number" id="bill-transfer" pattern="[0-9]*" class="w-full border border-gray-200 bg-gray-50 rounded-lg p-2 text-sm font-bold text-blue-600 focus:bg-white focus:border-blue-500 outline-none" placeholder="0">
+                            </div>
+                        </div>
+                        
+                        <!-- Thanh chọn địa chỉ nhanh -->
+                        <div class="flex gap-2 overflow-x-auto pb-2 mb-3 scrollbar-hide" id="address-list">
+                            <!-- Các nút địa chỉ sẽ được render vào đây -->
+                        </div>
+
+                        <button onclick="copyBill()" class="w-full py-3 bg-green-50 text-green-700 border border-green-200 rounded-xl text-sm font-bold shadow-sm active:bg-green-100 active:scale-[0.98] transition flex items-center justify-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
+                            COPY PHIẾU THANH TOÁN
+                        </button>
+                    </div>
+
+                    <div class="p-3 bg-gray-50">
                         <div class="text-xs font-bold text-gray-400 uppercase mb-2">Chi tiết bán:</div>
                         <ul id="sales-list" class="space-y-2 text-sm"></ul>
                         <div class="mt-4 pt-3 border-t border-dashed border-gray-200">
@@ -195,16 +239,19 @@
             'Tiền lẻ': [300, 500]
         };
 
-        // GIÁ MẶC ĐỊNH (GỐC)
         const defaultPrices = { 
             product: { 'Burger Bò Trứng': 20000, 'Burger Gà': 20000, 'Burger Tôm': 20000, 'Burger Xúc Xích': 20000, 'Burger Bò': 18000, 'Burger Trứng': 10000 }, 
             ingredient: { 'Phô mai': 5000, 'Trứng': 2000, 'Bò': 10000, 'Gà': 12000, 'Xúc xích': 12000, 'Tôm': 12000, 'Vỏ bánh': 8000 } 
         };
 
-        // GIÁ HIỆN TẠI (Load từ bộ nhớ hoặc dùng mặc định)
-        let currentPrices = JSON.parse(localStorage.getItem('app_prices')) || JSON.parse(JSON.stringify(defaultPrices));
+        // Địa chỉ mặc định
+        const defaultAddresses = ['Minh Phụng', 'Bình Thới', 'An Dương Vương', 'Cư Xá', 'Tân Hoà Đông'];
+        let currentAddresses = JSON.parse(localStorage.getItem('app_addresses')) || defaultAddresses;
 
+        let currentPrices = JSON.parse(localStorage.getItem('app_prices')) || JSON.parse(JSON.stringify(defaultPrices));
         const recipes = [ { name: 'Burger Bò Trứng', ing: { 'Vỏ bánh': 1, 'Bò': 1, 'Trứng': 1 } }, { name: 'Burger Bò', ing: { 'Vỏ bánh': 1, 'Bò': 1 } }, { name: 'Burger Tôm', ing: { 'Vỏ bánh': 1, 'Tôm': 1 } }, { name: 'Burger Gà', ing: { 'Vỏ bánh': 1, 'Gà': 1 } }, { name: 'Burger Trứng', ing: { 'Vỏ bánh': 1, 'Trứng': 1 } }, { name: 'Burger Xúc Xích', ing: { 'Vỏ bánh': 1, 'Xúc xích': 1 } } ];
+
+        let calcResult = { revenue: 0, tienLe: 0 };
 
         document.addEventListener('DOMContentLoaded', () => {
             const refs = { 
@@ -224,7 +271,9 @@
                 tabSettings: document.getElementById('tab-settings'),
                 suggestBar: document.getElementById('suggestion-bar'),
                 settingsProdList: document.getElementById('settings-product-list'),
-                settingsIngList: document.getElementById('settings-ingredient-list')
+                settingsIngList: document.getElementById('settings-ingredient-list'),
+                addressList: document.getElementById('address-list'),
+                billAddress: document.getElementById('bill-address')
             };
 
             let currentReport = null;
@@ -257,44 +306,60 @@
                 });
             });
 
-            // RENDER UI SETTINGS
+            // LOGIC ĐỊA CHỈ
+            const renderAddresses = () => {
+                refs.addressList.innerHTML = '';
+                currentAddresses.forEach(addr => {
+                    refs.addressList.innerHTML += `<button onclick="selectAddress('${addr}')" class="chip">${addr}</button>`;
+                });
+                refs.addressList.innerHTML += `<button onclick="addNewAddress()" class="chip bg-blue-50 text-blue-600 border-blue-200">+ Thêm</button>`;
+            };
+
+            window.selectAddress = (addr) => {
+                refs.billAddress.value = addr;
+            };
+
+            window.addNewAddress = () => {
+                const newAddr = prompt("Nhập tên địa chỉ mới:");
+                if (newAddr && newAddr.trim() !== "") {
+                    currentAddresses.push(newAddr.trim());
+                    localStorage.setItem('app_addresses', JSON.stringify(currentAddresses));
+                    renderAddresses();
+                    refs.billAddress.value = newAddr.trim();
+                }
+            };
+
+            renderAddresses();
+
+            // RENDER SETTINGS (Đã chỉnh sửa hiển thị đ)
             const renderSettingsUI = () => {
                 refs.settingsProdList.innerHTML = '';
                 refs.settingsIngList.innerHTML = '';
-
                 Object.keys(currentPrices.product).forEach(key => {
                     refs.settingsProdList.innerHTML += `
-                        <div class="flex justify-between items-center">
-                            <label class="text-sm text-gray-600 font-medium">${key}</label>
-                            <div class="relative">
-                                <input type="number" class="price-input" id="price-p-${key}" value="${currentPrices.product[key]}">
-                                <span class="absolute right-8 top-2 text-xs text-gray-400 font-bold pointer-events-none">₫</span>
-                            </div>
-                        </div>`;
+                    <div class="flex justify-between items-center">
+                        <label class="text-sm text-gray-600 font-medium">${key}</label>
+                        <div class="flex items-center gap-1">
+                            <input type="number" class="price-input" id="price-p-${key}" value="${currentPrices.product[key]}">
+                            <span class="text-xs text-gray-400 font-bold">đ</span>
+                        </div>
+                    </div>`;
                 });
-
                 Object.keys(currentPrices.ingredient).forEach(key => {
                     refs.settingsIngList.innerHTML += `
-                        <div class="flex justify-between items-center">
-                            <label class="text-sm text-gray-600 font-medium">${key}</label>
-                            <div class="relative">
-                                <input type="number" class="price-input" id="price-i-${key}" value="${currentPrices.ingredient[key]}">
-                                <span class="absolute right-8 top-2 text-xs text-gray-400 font-bold pointer-events-none">₫</span>
-                            </div>
-                        </div>`;
+                    <div class="flex justify-between items-center">
+                        <label class="text-sm text-gray-600 font-medium">${key}</label>
+                        <div class="flex items-center gap-1">
+                            <input type="number" class="price-input" id="price-i-${key}" value="${currentPrices.ingredient[key]}">
+                            <span class="text-xs text-gray-400 font-bold">đ</span>
+                        </div>
+                    </div>`;
                 });
             };
             
-            // XỬ LÝ SETTINGS
             window.savePriceSettings = () => {
-                Object.keys(currentPrices.product).forEach(key => {
-                    const val = parseInt(document.getElementById(`price-p-${key}`).value);
-                    if(val >= 0) currentPrices.product[key] = val;
-                });
-                Object.keys(currentPrices.ingredient).forEach(key => {
-                    const val = parseInt(document.getElementById(`price-i-${key}`).value);
-                    if(val >= 0) currentPrices.ingredient[key] = val;
-                });
+                Object.keys(currentPrices.product).forEach(key => { const val = parseInt(document.getElementById(`price-p-${key}`).value); if(val >= 0) currentPrices.product[key] = val; });
+                Object.keys(currentPrices.ingredient).forEach(key => { const val = parseInt(document.getElementById(`price-i-${key}`).value); if(val >= 0) currentPrices.ingredient[key] = val; });
                 localStorage.setItem('app_prices', JSON.stringify(currentPrices));
                 alert('Đã lưu giá mới thành công!');
             };
@@ -318,52 +383,28 @@
                 saveTemp();
             };
 
-            // LOGIC GỢI Ý
             const handleFocus = (e) => {
                 const item = e.target.dataset.item;
                 activeInputId = e.target.id;
-                
                 if (item && presets[item]) {
-                    const options = presets[item].map(val => 
-                        `<button onclick="setPresetVal(${val})" class="flex-none bg-gray-100 text-gray-700 font-bold py-2 px-4 rounded-lg border border-gray-200 active:bg-blue-100 active:text-blue-700 active:border-blue-300 text-sm whitespace-nowrap min-w-[60px]">${val}</button>`
-                    ).join('');
-                    
+                    const options = presets[item].map(val => `<button onclick="setPresetVal(${val})" class="flex-none bg-gray-100 text-gray-700 font-bold py-2 px-4 rounded-lg border border-gray-200 active:bg-blue-100 active:text-blue-700 active:border-blue-300 text-sm whitespace-nowrap min-w-[60px]">${val}</button>`).join('');
                     refs.suggestBar.innerHTML = `<div class="flex items-center px-2 text-[10px] font-bold text-gray-400 uppercase">Gợi ý:</div>` + options;
                     refs.suggestBar.classList.add('active');
                     refs.btnCalc.parentElement.style.paddingBottom = '60px'; 
-                } else {
-                    hideSuggest();
-                }
+                } else hideSuggest();
             };
-
-            const hideSuggest = () => {
-                refs.suggestBar.classList.remove('active');
-                if(refs.btnCalc.parentElement) refs.btnCalc.parentElement.style.paddingBottom = 'env(safe-area-inset-bottom)';
-            };
-
-            window.setPresetVal = (val) => {
-                if(activeInputId) {
-                    const el = document.getElementById(activeInputId);
-                    el.value = val;
-                    saveTemp();
-                }
-            };
-
+            const hideSuggest = () => { refs.suggestBar.classList.remove('active'); if(refs.btnCalc.parentElement) refs.btnCalc.parentElement.style.paddingBottom = 'env(safe-area-inset-bottom)'; };
+            window.setPresetVal = (val) => { if(activeInputId) { const el = document.getElementById(activeInputId); el.value = val; saveTemp(); } };
             const saveTemp = () => { const d = {}; document.querySelectorAll('.inp').forEach(x => { if(x.value) d[x.id] = x.value; }); localStorage.setItem('app_temp', JSON.stringify(d)); };
-            
             const inputs = document.querySelectorAll('.inp');
-            inputs.forEach(i => { 
-                i.addEventListener('input', () => { if(i.value < 0) i.value = 0; saveTemp(); }); 
-                i.addEventListener('focus', handleFocus);
-                i.addEventListener('blur', () => setTimeout(hideSuggest, 200)); 
-            });
-
+            inputs.forEach(i => { i.addEventListener('input', () => { if(i.value < 0) i.value = 0; saveTemp(); }); i.addEventListener('focus', handleFocus); i.addEventListener('blur', () => setTimeout(hideSuggest, 200)); });
             try { const saved = JSON.parse(localStorage.getItem('app_temp')); if(saved) Object.keys(saved).forEach(k => { if(document.getElementById(k)) document.getElementById(k).value = saved[k]; }); } catch(e){}
 
             // TÍNH TOÁN
             refs.btnCalc.addEventListener('click', () => {
                 if(refs.viewInput.classList.contains('hidden')) refs.tabInput.click();
                 let raw = {}, hasData = false, tableHTML = '', totalM = 0, totalB = 0; refs.sales.innerHTML = '';
+                calcResult = { revenue: 0, tienLe: 0 }; 
                 
                 allItems.forEach(item => { 
                     const id = item.replace(/\s+/g, '-'); 
@@ -373,13 +414,18 @@
                     if(n>0||t>0) { 
                         hasData = true; 
                         let net = Math.max(0, n-t); 
-                        if (item === 'Tiền lẻ') net = 0;
+                        
+                        if (item === 'Tiền lẻ') {
+                            calcResult.tienLe = net; 
+                            net = 0; 
+                        }
 
                         raw[item] = net; 
                         
                         const isMoney = item === 'Tiền lẻ';
-                        const displayNet = isMoney ? '-' : net;
-                        const rowClass = isMoney ? 'bg-yellow-50' : 'border-b border-gray-50 last:border-0';tableHTML += `<tr class="${rowClass}"><td class="py-2 px-2 font-medium">${item}</td><td class="py-2 px-1 text-center text-blue-500">${n}</td><td class="py-2 px-1 text-center text-red-400">${t}</td><td class="py-2 px-2 text-right font-bold">${displayNet}</td></tr>`; 
+                        const displayNet = isMoney ? calcResult.tienLe : net; 
+                        const rowClass = isMoney ? 'bg-yellow-50' : 'border-b border-gray-50 last:border-0';
+                        tableHTML += `<tr class="${rowClass}"><td class="py-2 px-2 font-medium">${item}</td><td class="py-2 px-1 text-center text-blue-500">${n}</td><td class="py-2 px-1 text-center text-red-400">${t}</td><td class="py-2 px-2 text-right font-bold">${displayNet}</td></tr>`; 
                     } else { 
                         raw[item]=0; 
                     } 
@@ -388,33 +434,16 @@
                 if(!hasData) return alert('Vui lòng nhập số liệu!');
                 
                 let rem = {...raw};
-                
-                // Sử dụng currentPrices để tính toán
                 recipes.forEach(r => { 
-                    let c = Infinity; 
-                    for(let k in r.ing) { 
-                        if((rem[k]||0)===0) { c=0; break; } 
-                        c = Math.min(c, Math.floor(rem[k]/r.ing[k])); 
-                    } 
+                    let c = Infinity; for(let k in r.ing) { if((rem[k]||0)===0) { c=0; break; } c = Math.min(c, Math.floor(rem[k]/r.ing[k])); } 
                     if(c===Infinity) c=0; 
-                    if(c>0) { 
-                        const m = c * currentPrices.product[r.name]; // Use dynamic price
-                        totalM+=m; 
-                        totalB+=c; 
-                        for(let k in r.ing) rem[k]-=c*r.ing[k]; 
-                        refs.sales.innerHTML += `<li class="flex justify-between py-1 border-b border-gray-100 last:border-0"><span class="text-gray-800 font-bold">${r.name} <small class="text-gray-400 font-normal">x${c}</small></span><span class="font-bold text-blue-600">${fmt(m)}</span></li>`; 
-                    } 
+                    if(c>0) { const m = c * currentPrices.product[r.name]; totalM+=m; totalB+=c; for(let k in r.ing) rem[k]-=c*r.ing[k]; refs.sales.innerHTML += `<li class="flex justify-between py-1 border-b border-gray-100 last:border-0"><span class="text-gray-800 font-bold">${r.name} <small class="text-gray-400 font-normal">x${c}</small></span><span class="font-bold text-blue-600">${fmt(m)}</span></li>`; } 
                 });
-
                 for(let k in rem) { 
-                    if(rem[k]>0 && currentPrices.ingredient[k] && k !== 'Tiền lẻ') { 
-                        const m = rem[k] * currentPrices.ingredient[k]; // Use dynamic price
-                        totalM+=m; 
-                        if(k==='Vỏ bánh') totalB+=rem[k]; 
-                        refs.sales.innerHTML += `<li class="flex justify-between py-1 border-b border-gray-100 last:border-0 text-gray-500"><span>${k} (dư) <small>x${rem[k]}</small></span><span>${fmt(m)}</span></li>`; 
-                    } 
+                    if(rem[k]>0 && currentPrices.ingredient[k] && k !== 'Tiền lẻ') { const m = rem[k] * currentPrices.ingredient[k]; totalM+=m; if(k==='Vỏ bánh') totalB+=rem[k]; refs.sales.innerHTML += `<li class="flex justify-between py-1 border-b border-gray-100 last:border-0 text-gray-500"><span>${k} (dư) <small>x${rem[k]}</small></span><span>${fmt(m)}</span></li>`; } 
                 }
                 
+                calcResult.revenue = totalM; 
                 refs.table.innerHTML = tableHTML; 
                 refs.rev.innerText = fmt(totalM); 
                 refs.count.innerText = `Tổng bánh: ${totalB}`; 
@@ -424,25 +453,32 @@
                 currentReport = { id: Date.now(), time: new Date().toLocaleString('vi-VN', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'}), money: totalM, count: totalB, html: `<div class="mb-2 font-bold text-blue-600 text-xs">CHI TIẾT:</div><ul class="mb-3 text-sm">${refs.sales.innerHTML}</ul><div class="font-bold text-gray-400 text-[10px] uppercase border-t pt-2">BẢNG KÊ GỐC:</div><table class="w-full text-xs text-gray-500 mt-1">${tableHTML}</table>` };
             });
 
-            // COPY, SAVE & HISTORY
-            window.copyToClipboard = (type) => {
-                let header = type === 'n' ? 'NHẬN HÀNG' : 'TRẢ HÀNG';
-                let text = `${header}\n`;
-                let count = 0;
-                dataConfig.forEach(cat => {
-                    cat.items.forEach(item => {
-                        const id = item.replace(/\s+/g, '-');
-                        const el = document.getElementById(`${type}-${id}`);
-                        const val = el.value ? el.value : '';
-                        if(val) { text += `${item}: ${val}\n`; count++; }
-                    });
-                });
-                if(count === 0) return alert('Chưa có dữ liệu nào để copy!');
-                navigator.clipboard.writeText(text).then(() => alert(`Đã copy mẫu ${header}!`)).catch(err => alert('Lỗi copy, thử chọn thủ công.'));
+            // TÍNH NĂNG COPY MỚI
+            window.copyBill = () => {
+                const address = refs.billAddress.value || 'Chưa nhập địa chỉ';
+                const transfer = parseInt(document.getElementById('bill-transfer').value) || 0;
+                const total = calcResult.revenue;
+                const cash = total - transfer;
+                const tienLe = calcResult.tienLe;
+
+                const text = `${address}\nTiền bánh: ${fmt(total)}\nTiền mặt: ${fmt(cash)}\nChuyển khoản: ${fmt(transfer)}\nTiền lẻ: ${fmt(tienLe)}`;
+                
+                navigator.clipboard.writeText(text).then(() => {
+                    alert('Đã copy phiếu thanh toán!');
+                }).catch(err => alert('Lỗi copy!'));
             };
 
+            // COPY INPUT/OUTPUT
+            window.copyToClipboard = (type) => {
+                let header = type === 'n' ? 'NHẬN HÀNG' : 'TRẢ HÀNG';
+                let text = `${header}\n`; let count = 0;
+                dataConfig.forEach(cat => { cat.items.forEach(item => { const id = item.replace(/\s+/g, '-'); const el = document.getElementById(`${type}-${id}`); const val = el.value ? el.value : ''; if(val) { text += `${item}: ${val}\n`; count++; } }); });
+                if(count === 0) return alert('Chưa có dữ liệu copy!');
+                navigator.clipboard.writeText(text).then(() => alert(`Đã copy mẫu ${header}!`));
+            };
+
+            // SAVE & HISTORY
             document.getElementById('save-btn').addEventListener('click', () => { if(!currentReport) return; let h = JSON.parse(localStorage.getItem('app_hist')||'[]'); h.unshift(currentReport); localStorage.setItem('app_hist', JSON.stringify(h)); alert('Đã lưu!'); refs.tabHistory.click(); });
-            
             const renderHistory = () => { 
                 let h = JSON.parse(localStorage.getItem('app_hist')||'[]'); 
                 if(h.length===0) { refs.history.innerHTML = '<div class="text-center text-gray-400 py-10 text-xs">Chưa có lịch sử</div>'; return; } 
@@ -453,52 +489,23 @@
                     return `<div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden"><button onclick="delItem(${x.id})" class="absolute top-2 right-2 text-gray-300 hover:text-red-500 p-2 z-10 active:scale-90 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button><div class="flex items-end gap-3 mb-3"><span class="text-4xl font-black text-gray-300 leading-none">${d.getDate()}</span><div class="flex flex-col pb-0.5"><span class="text-sm font-bold text-gray-700 uppercase leading-none mb-1">${dayName}</span><span class="text-[11px] font-medium text-gray-400 tracking-wide">THÁNG ${d.getMonth() + 1} • ${timeStr}</span></div></div><div class="flex justify-between items-end border-t border-gray-100 pt-3 mt-1"><div><div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Doanh thu</div><div class="text-2xl font-black text-blue-600 tracking-tight leading-none">${fmt(x.money)}</div></div><div class="text-right"><div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Số lượng</div><div class="text-lg font-bold text-gray-600 leading-none">${x.count} <span class="text-xs font-normal text-gray-400">bánh</span></div></div></div></div>`;
                 }).join(''); 
             };
-            
             window.delItem = (id) => { if(confirm('Xóa phiếu này?')) { let h = JSON.parse(localStorage.getItem('app_hist')||'[]'); localStorage.setItem('app_hist', JSON.stringify(h.filter(x => x.id !== id))); renderHistory(); }};
             document.getElementById('clear-history').addEventListener('click', () => { if(confirm('Xóa hết?')) { localStorage.removeItem('app_hist'); renderHistory(); } });
             document.getElementById('reset-btn').addEventListener('click', () => { if(confirm('Xóa nhập liệu?')) { inputs.forEach(i=>i.value=''); localStorage.removeItem('app_temp'); refs.result.classList.add('hidden'); hideSuggest(); } });
             
-            // TABS SWITCH LOGIC (Updated for 3 Tabs)
+            // TABS SWITCH
             const switchTab = (tabName) => { 
-                refs.viewInput.classList.add('hidden');
-                refs.viewHistory.classList.add('hidden');
-                refs.viewSettings.classList.add('hidden');
-                document.getElementById('calc-bar').classList.add('hidden'); // Hide calc bar default
-
-                // Reset styles
-                [refs.tabInput, refs.tabHistory, refs.tabSettings].forEach(t => {
-                    t.className = 'py-3 text-sm font-bold text-gray-400 border-b-2 border-transparent transition-colors';
-                });
-
-                if (tabName === 'input') {
-                    refs.viewInput.classList.remove('hidden');
-                    document.getElementById('calc-bar').classList.remove('hidden');
-                    refs.tabInput.className = 'py-3 text-sm font-bold text-blue-600 border-b-2 border-blue-600 transition-colors';
-                } else if (tabName === 'history') {
-                    refs.viewHistory.classList.remove('hidden');
-                    refs.tabHistory.className = 'py-3 text-sm font-bold text-blue-600 border-b-2 border-blue-600 transition-colors';
-                    renderHistory();
-                } else if (tabName === 'settings') {
-                    refs.viewSettings.classList.remove('hidden');
-                    refs.tabSettings.className = 'py-3 text-sm font-bold text-blue-600 border-b-2 border-blue-600 transition-colors';
-                    renderSettingsUI();
-                }
-                
+                refs.viewInput.classList.add('hidden'); refs.viewHistory.classList.add('hidden'); refs.viewSettings.classList.add('hidden');
+                document.getElementById('calc-bar').classList.add('hidden'); 
+                [refs.tabInput, refs.tabHistory, refs.tabSettings].forEach(t => t.className = 'py-3 text-sm font-bold text-gray-400 border-b-2 border-transparent transition-colors');
+                if (tabName === 'input') { refs.viewInput.classList.remove('hidden'); document.getElementById('calc-bar').classList.remove('hidden'); refs.tabInput.className = 'py-3 text-sm font-bold text-blue-600 border-b-2 border-blue-600 transition-colors'; } 
+                else if (tabName === 'history') { refs.viewHistory.classList.remove('hidden'); refs.tabHistory.className = 'py-3 text-sm font-bold text-blue-600 border-b-2 border-blue-600 transition-colors'; renderHistory(); } 
+                else if (tabName === 'settings') { refs.viewSettings.classList.remove('hidden'); refs.tabSettings.className = 'py-3 text-sm font-bold text-blue-600 border-b-2 border-blue-600 transition-colors'; renderSettingsUI(); }
                 hideSuggest();
             };
-
-            refs.tabInput.onclick = () => switchTab('input'); 
-            refs.tabHistory.onclick = () => switchTab('history');
-            refs.tabSettings.onclick = () => switchTab('settings');
+            refs.tabInput.onclick = () => switchTab('input'); refs.tabHistory.onclick = () => switchTab('history'); refs.tabSettings.onclick = () => switchTab('settings');
         });
     </script>
-
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js');
-            });
-        }
-    </script>
+    <script>if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js'); }); }</script>
 </body>
 </html>

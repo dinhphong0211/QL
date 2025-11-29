@@ -3,58 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Quản Lý Kho Burger</title>
+    <title>Quản Lý Kho Burger Pro</title>
     
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3075/3075977.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
-        /* 1. Sửa lỗi font chữ quá nhỏ gây zoom trên iPhone */
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        /* Reset cơ bản */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            touch-action: manipulation; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        
         input, select, textarea, button { font-size: 16px !important; } 
-
-        /* 2. Ẩn nút tăng giảm số mặc định xấu xí */
         input[type=number]::-webkit-inner-spin-button, 
         input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         input[type=number] { -moz-appearance: textfield; text-align: center; }
 
-        /* 3. Xử lý vùng an toàn cho iPhone tai thỏ (iPhone X trở lên) */
         .safe-pb { padding-bottom: env(safe-area-inset-bottom); }
-        
-        /* Animation nhẹ */
         .fade-in { animation: fadeIn 0.3s ease-in; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Custom Input Group */
+        .input-group {
+            display: flex;
+            align-items: center;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            overflow: hidden;
+            background: #f9fafb;
+            height: 36px;
+        }
+        .input-group button {
+            width: 24px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #6b7280;
+            background: #f3f4f6;
+            font-size: 14px !important;
+        }
+        .input-group button:active { background: #e5e7eb; }
+        .input-group input {
+            width: 40px;
+            height: 100%;
+            border: none;
+            background: transparent;
+            padding: 0;
+            font-size: 14px !important;
+            font-weight: 700;
+        }
+        .input-group input:focus { outline: none; background: #fff; }
+
+        /* Suggestion Bar */
+        #suggestion-bar {
+            transform: translateY(100%);
+            transition: transform 0.2s ease-out;
+        }
+        #suggestion-bar.active {
+            transform: translateY(0);
+        }
+        
+        /* Settings Input */
+        .price-input {
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 8px;
+            width: 100px;
+            text-align: right;
+            font-weight: bold;
+            color: #2563eb;
+        }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-900 h-screen flex flex-col overflow-hidden">
+<body class="bg-gray-50 text-gray-900 h-[100dvh] flex flex-col overflow-hidden">
 
     <header class="flex-none bg-white border-b border-gray-200 px-4 py-3 flex justify-between items-center shadow-sm z-20">
-        <h1 class="text-lg font-bold text-gray-800 flex items-center gap-2">
-            🍔 Quản Lý Kho
+        <h1 class="text-lg font-bold text-gray-800 flex items-center gap-2"> 🍔 Kho & Tiền
         </h1>
         <button id="reset-btn" class="text-xs bg-red-50 text-red-600 px-3 py-2 rounded font-bold active:bg-red-100 border border-red-100">
-            Làm mới
+            Reset
         </button>
     </header>
 
-    <div class="flex-none grid grid-cols-2 border-b border-gray-200 bg-white">
+    <!-- Thay đổi grid thành 3 cột -->
+    <div class="flex-none grid grid-cols-3 border-b border-gray-200 bg-white z-10">
         <button id="tab-input" class="py-3 text-sm font-bold text-blue-600 border-b-2 border-blue-600 transition-colors">Nhập Kho</button>
         <button id="tab-history" class="py-3 text-sm font-bold text-gray-400 border-b-2 border-transparent transition-colors">Lịch Sử</button>
+        <button id="tab-settings" class="py-3 text-sm font-bold text-gray-400 border-b-2 border-transparent transition-colors">Cài Đặt</button>
     </div>
 
-    <main id="main-container" class="flex-1 overflow-y-auto bg-gray-50 p-3 pb-32 safe-pb scroll-smooth">
+    <main id="main-container" class="flex-1 overflow-y-auto bg-gray-50 p-2 scroll-smooth relative pb-24">
         
+        <!-- VIEW 1: NHẬP KHO -->
         <div id="view-input" class="fade-in">
-            <div class="flex justify-between text-[11px] font-bold text-gray-400 uppercase mb-2 px-1 tracking-wider">
+            <div class="grid grid-cols-2 gap-3 mb-4 mt-2">
+                <button onclick="copyToClipboard('n')" class="flex items-center justify-center gap-2 bg-white border border-blue-200 text-blue-600 py-2.5 rounded-lg text-xs font-bold shadow-sm active:bg-blue-50">
+                    📋 Copy Mẫu Nhận
+                </button>
+                <button onclick="copyToClipboard('t')" class="flex items-center justify-center gap-2 bg-white border border-red-200 text-red-500 py-2.5 rounded-lg text-xs font-bold shadow-sm active:bg-red-50">
+                    📋 Copy Mẫu Trả
+                </button>
+            </div>
+
+            <div class="flex justify-between text-[10px] font-bold text-gray-400 uppercase mb-2 px-1 tracking-wider sticky top-0 bg-gray-50 py-2 z-10">
                 <span class="w-1/3 pt-1">Tên hàng</span>
-                <div class="flex gap-3">
-                    <span class="w-14 text-center bg-blue-50 text-blue-600 rounded py-0.5">Nhận</span>
-                    <span class="w-14 text-center bg-red-50 text-red-500 rounded py-0.5">Trả</span>
+                <div class="flex gap-6 pr-2">
+                    <span class="w-20 text-center bg-blue-50 text-blue-600 rounded py-0.5">Nhận</span>
+                    <span class="w-20 text-center bg-red-50 text-red-500 rounded py-0.5">Trả</span>
                 </div>
             </div>
             
-            <div id="item-list" class="space-y-2.5"></div>
+            <div id="item-list" class="space-y-2 pb-10"></div>
 
-            <div id="result-section" class="hidden mt-6">
+            <div id="result-section" class="hidden mt-6 mb-2">
                 <div class="bg-white rounded-xl border border-blue-100 shadow-sm overflow-hidden">
                     <div class="bg-blue-50 p-4 border-b border-blue-100 flex justify-between items-center">
                         <div>
@@ -62,248 +130,375 @@
                             <div class="text-3xl font-black text-blue-600 tracking-tight" id="total-revenue">0</div>
                             <div class="text-xs font-semibold text-gray-500 mt-1" id="total-count">0 bánh</div>
                         </div>
-                        <button id="save-btn" class="bg-yellow-400 text-yellow-900 text-xs font-bold py-2 px-3 rounded-lg shadow-sm active:scale-95 active:bg-yellow-500 transition">
-                            Lưu Phiếu
-                        </button>
+                        <button id="save-btn" class="bg-yellow-400 text-yellow-900 text-xs font-bold py-2 px-3 rounded-lg shadow-sm active:scale-95 active:bg-yellow-500 transition">Lưu Phiếu</button>
                     </div>
-
                     <div class="p-3">
                         <div class="text-xs font-bold text-gray-400 uppercase mb-2">Chi tiết bán:</div>
                         <ul id="sales-list" class="space-y-2 text-sm"></ul>
-                        
                         <div class="mt-4 pt-3 border-t border-dashed border-gray-200">
-                            <div class="text-xs font-bold text-gray-400 uppercase mb-2">Bảng kê tiêu thụ:</div>
-                            <table class="w-full text-xs">
-                                <thead class="bg-gray-100 text-gray-500">
-                                    <tr>
-                                        <th class="py-1 px-2 text-left rounded-l">Món</th>
-                                        <th class="py-1 px-1 text-center">Nhận</th>
-                                        <th class="py-1 px-1 text-center">Trả</th>
-                                        <th class="py-1 px-2 text-right rounded-r">Dùng</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="table-body" class="divide-y divide-gray-50 text-gray-700"></tbody>
-                            </table>
+                            <div class="text-xs font-bold text-gray-400 uppercase mb-2">Bảng kê chi tiết:</div>
+                            <table class="w-full text-xs text-gray-500"><thead class="bg-gray-100"><tr><th class="py-1 px-2 text-left rounded-l">Món</th><th class="py-1 px-1 text-center">Nhận</th><th class="py-1 px-1 text-center">Trả</th><th class="py-1 px-2 text-right rounded-r">Dùng</th></tr></thead><tbody id="table-body" class="divide-y divide-gray-50 text-gray-700"></tbody></table>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div id="view-history" class="hidden fade-in">
-            <div class="flex justify-between items-center mb-4 px-1">
+        <!-- VIEW 2: LỊCH SỬ -->
+        <div id="view-history" class="hidden fade-in pb-4">
+            <div class="flex justify-between items-center mb-4 px-1 sticky top-0 bg-gray-50 py-2 z-10">
                 <h2 class="font-bold text-gray-700 text-sm">Danh sách phiếu đã lưu</h2>
                 <button id="clear-history" class="text-xs text-red-500 font-medium underline p-2">Xóa tất cả</button>
             </div>
-            <div id="history-list" class="space-y-3">
-                <div class="text-center text-gray-400 py-12 text-sm">Chưa có dữ liệu lịch sử.</div>
+            <div id="history-list" class="space-y-3"></div>
+        </div>
+
+        <!-- VIEW 3: CÀI ĐẶT -->
+        <div id="view-settings" class="hidden fade-in pb-20">
+            <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-4">
+                <h3 class="text-sm font-bold text-gray-800 uppercase border-b pb-2 mb-3">Giá Bán (Sản phẩm)</h3>
+                <div id="settings-product-list" class="space-y-3"></div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6">
+                <h3 class="text-sm font-bold text-gray-800 uppercase border-b pb-2 mb-3">Giá Vốn (Nguyên liệu)</h3>
+                <div id="settings-ingredient-list" class="space-y-3"></div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="restoreDefaultPrices()" class="w-full bg-gray-200 text-gray-700 font-bold py-3 rounded-xl active:bg-gray-300">Khôi phục gốc</button>
+                <button onclick="savePriceSettings()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg active:bg-blue-700">Lưu Giá Mới</button>
             </div>
         </div>
-    </main>
 
-    <div class="flex-none bg-white border-t border-gray-200 p-3 safe-pb z-30 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+    </main>
+ <div id="suggestion-bar" class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-2 z-50 flex gap-2 overflow-x-auto shadow-[0_-4px_10px_rgba(0,0,0,0.1)] safe-pb">
+        </div>
+
+    <div id="calc-bar" class="flex-none bg-white border-t border-gray-200 p-3 safe-pb z-30 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] relative">
         <button id="calculate-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl shadow-lg active:scale-[0.98] transition-all text-lg flex justify-center items-center gap-2">
             <span>TÍNH TOÁN</span>
         </button>
     </div>
 
     <script>
-        // --- 1. KHẮC PHỤC LỖI TƯƠNG THÍCH: GỠ BỎ SERVICE WORKER CŨ ---
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                for(let registration of registrations) { registration.unregister(); } 
-            });
-        }
-
-        // --- 2. CẤU HÌNH DỮ LIỆU ---
         const dataConfig = [
             { title: "Nguyên liệu", items: ['Vỏ bánh', 'Bò', 'Tôm', 'Gà', 'Xúc xích', 'Trứng', 'Phô mai'] },
-            { title: "Phụ gia", items: ['Bơ', 'Tương cà', 'Tương ớt', 'Rau', 'Gas'] }
+            { title: "Phụ gia & Khác", items: ['Bơ', 'Tương cà', 'Tương ớt', 'Rau', 'Gas', 'Tiền lẻ'] }
         ];
         
-        const prices = {
-            product: { 'Burger Bò Trứng': 20000, 'Burger Gà': 20000, 'Burger Tôm': 20000, 'Burger Xúc Xích': 20000, 'Burger Bò': 18000, 'Burger Trứng': 10000 },
-            ingredient: { 'Phô mai': 5000, 'Trứng': 2000, 'Bò': 10000, 'Gà': 12000, 'Xúc xích': 12000, 'Tôm': 12000, 'Vỏ bánh': 8000 }
+        const presets = {
+            'Bơ': [150, 250, 450, 500, 1000],
+            'Tương cà': [150, 250, 450, 500, 1000],
+            'Tương ớt': [150, 250, 450, 500, 1000],
+            'Rau': [150, 200, 250, 300],
+            'Tiền lẻ': [300, 500]
         };
 
-        const recipes = [
-            { name: 'Burger Bò Trứng', ing: { 'Vỏ bánh': 1, 'Bò': 1, 'Trứng': 1 } },
-            { name: 'Burger Bò', ing: { 'Vỏ bánh': 1, 'Bò': 1 } },
-            { name: 'Burger Tôm', ing: { 'Vỏ bánh': 1, 'Tôm': 1 } },
-            { name: 'Burger Gà', ing: { 'Vỏ bánh': 1, 'Gà': 1 } },
-            { name: 'Burger Trứng', ing: { 'Vỏ bánh': 1, 'Trứng': 1 } },
-            { name: 'Burger Xúc Xích', ing: { 'Vỏ bánh': 1, 'Xúc xích': 1 } }
-        ];
+        // GIÁ MẶC ĐỊNH (GỐC)
+        const defaultPrices = { 
+            product: { 'Burger Bò Trứng': 20000, 'Burger Gà': 20000, 'Burger Tôm': 20000, 'Burger Xúc Xích': 20000, 'Burger Bò': 18000, 'Burger Trứng': 10000 }, 
+            ingredient: { 'Phô mai': 5000, 'Trứng': 2000, 'Bò': 10000, 'Gà': 12000, 'Xúc xích': 12000, 'Tôm': 12000, 'Vỏ bánh': 8000 } 
+        };
 
-        // --- 3. LOGIC CHÍNH ---
+        // GIÁ HIỆN TẠI (Load từ bộ nhớ hoặc dùng mặc định)
+        let currentPrices = JSON.parse(localStorage.getItem('app_prices')) || JSON.parse(JSON.stringify(defaultPrices));
+
+        const recipes = [ { name: 'Burger Bò Trứng', ing: { 'Vỏ bánh': 1, 'Bò': 1, 'Trứng': 1 } }, { name: 'Burger Bò', ing: { 'Vỏ bánh': 1, 'Bò': 1 } }, { name: 'Burger Tôm', ing: { 'Vỏ bánh': 1, 'Tôm': 1 } }, { name: 'Burger Gà', ing: { 'Vỏ bánh': 1, 'Gà': 1 } }, { name: 'Burger Trứng', ing: { 'Vỏ bánh': 1, 'Trứng': 1 } }, { name: 'Burger Xúc Xích', ing: { 'Vỏ bánh': 1, 'Xúc xích': 1 } } ];
+
         document.addEventListener('DOMContentLoaded', () => {
-            const refs = {
-                list: document.getElementById('item-list'),
-                result: document.getElementById('result-section'),
-                sales: document.getElementById('sales-list'),
-                table: document.getElementById('table-body'),
-                rev: document.getElementById('total-revenue'),
-                count: document.getElementById('total-count'),
-                history: document.getElementById('history-list'),
-                btnCalc: document.getElementById('calculate-btn'),
-                viewInput: document.getElementById('view-input'),
-                viewHistory: document.getElementById('view-history'),
-                tabInput: document.getElementById('tab-input'),
-                tabHistory: document.getElementById('tab-history')
+            const refs = { 
+                list: document.getElementById('item-list'), 
+                result: document.getElementById('result-section'), 
+                sales: document.getElementById('sales-list'), 
+                table: document.getElementById('table-body'), 
+                rev: document.getElementById('total-revenue'), 
+                count: document.getElementById('total-count'), 
+                history: document.getElementById('history-list'), 
+                btnCalc: document.getElementById('calculate-btn'), 
+                viewInput: document.getElementById('view-input'), 
+                viewHistory: document.getElementById('view-history'), 
+                viewSettings: document.getElementById('view-settings'),
+                tabInput: document.getElementById('tab-input'), 
+                tabHistory: document.getElementById('tab-history'), 
+                tabSettings: document.getElementById('tab-settings'),
+                suggestBar: document.getElementById('suggestion-bar'),
+                settingsProdList: document.getElementById('settings-product-list'),
+                settingsIngList: document.getElementById('settings-ingredient-list')
             };
 
             let currentReport = null;
+            let activeInputId = null;
             const allItems = dataConfig.flatMap(c => c.items);
+            const fmt = n => new Intl.NumberFormat('vi-VN').format(n) + '₫';
 
-            // RENDER INPUTS
+            // RENDER UI CHÍNH
             dataConfig.forEach(cat => {
-                refs.list.innerHTML += `<div class="text-[10px] font-bold text-gray-400 uppercase mt-3 mb-1 ml-1">${cat.title}</div>`;
+                refs.list.innerHTML += `<div class="text-[10px] font-bold text-gray-400 uppercase mt-4 mb-2 ml-1 tracking-wider">${cat.title}</div>`;
                 cat.items.forEach(item => {
                     const id = item.replace(/\s+/g, '-');
+                    const hasPreset = presets[item] ? '⚡' : '';
                     refs.list.innerHTML += `
-                        <div class="flex justify-between items-center bg-white p-2 rounded-lg border border-gray-200 shadow-sm">
-                            <span class="text-sm font-semibold text-gray-700 flex-1">${item}</span>
-                            <div class="flex gap-3">
-                                <input type="number" inputmode="numeric" pattern="[0-9]*" id="n-${id}" class="inp w-14 h-10 rounded border border-gray-200 text-center text-blue-600 font-bold text-lg focus:border-blue-500 focus:ring-1 bg-gray-50" placeholder="-">
-                                <input type="number" inputmode="numeric" pattern="[0-9]*" id="t-${id}" class="inp w-14 h-10 rounded border border-gray-200 text-center text-red-500 font-bold text-lg focus:border-red-500 focus:ring-1 bg-gray-50" placeholder="-">
+                        <div class="flex justify-between items-center bg-white p-2.5 rounded-xl border border-gray-200 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+                            <span class="text-sm font-bold text-gray-700 flex-1 pr-2 leading-tight">${item} <span class="text-[10px] text-yellow-500">${hasPreset}</span></span>
+                            <div class="flex gap-2">
+                                <div class="input-group w-24 border-blue-200 focus-within:ring-1 focus-within:ring-blue-500 focus-within:border-blue-500">
+                                    <button onclick="adjustVal('n-${id}', -1)">-</button>
+                                    <input type="number" inputmode="numeric" pattern="[0-9]*" id="n-${id}" data-item="${item}" class="inp text-blue-600 text-center" placeholder="-">
+                                    <button onclick="adjustVal('n-${id}', 1)">+</button>
+                                </div>
+                                <div class="input-group w-24 border-red-200 focus-within:ring-1 focus-within:ring-red-500 focus-within:border-red-500">
+                                    <button onclick="adjustVal('t-${id}', -1)">-</button>
+                                    <input type="number" inputmode="numeric" pattern="[0-9]*" id="t-${id}" data-item="${item}" class="inp text-red-500 text-center" placeholder="-">
+                                    <button onclick="adjustVal('t-${id}', 1)">+</button>
+                                </div>
                             </div>
                         </div>`;
                 });
             });
 
-            // AUTO SAVE INPUT
-            const inputs = document.querySelectorAll('.inp');
-            inputs.forEach(i => {
-                i.addEventListener('input', () => {
-                    if(i.value < 0) i.value = 0;
-                    const d = {}; inputs.forEach(x => { if(x.value) d[x.id] = x.value; });
-                    localStorage.setItem('app_temp', JSON.stringify(d));
+            // RENDER UI SETTINGS
+            const renderSettingsUI = () => {
+                refs.settingsProdList.innerHTML = '';
+                refs.settingsIngList.innerHTML = '';
+
+                Object.keys(currentPrices.product).forEach(key => {
+                    refs.settingsProdList.innerHTML += `
+                        <div class="flex justify-between items-center">
+                            <label class="text-sm text-gray-600 font-medium">${key}</label>
+                            <div class="relative">
+                                <input type="number" class="price-input" id="price-p-${key}" value="${currentPrices.product[key]}">
+                                <span class="absolute right-8 top-2 text-xs text-gray-400 font-bold pointer-events-none">₫</span>
+                            </div>
+                        </div>`;
                 });
-                i.addEventListener('focus', e => e.target.select());
+
+                Object.keys(currentPrices.ingredient).forEach(key => {
+                    refs.settingsIngList.innerHTML += `
+                        <div class="flex justify-between items-center">
+                            <label class="text-sm text-gray-600 font-medium">${key}</label>
+                            <div class="relative">
+                                <input type="number" class="price-input" id="price-i-${key}" value="${currentPrices.ingredient[key]}">
+                                <span class="absolute right-8 top-2 text-xs text-gray-400 font-bold pointer-events-none">₫</span>
+                            </div>
+                        </div>`;
+                });
+            };
+            
+            // XỬ LÝ SETTINGS
+            window.savePriceSettings = () => {
+                Object.keys(currentPrices.product).forEach(key => {
+                    const val = parseInt(document.getElementById(`price-p-${key}`).value);
+                    if(val >= 0) currentPrices.product[key] = val;
+                });
+                Object.keys(currentPrices.ingredient).forEach(key => {
+                    const val = parseInt(document.getElementById(`price-i-${key}`).value);
+                    if(val >= 0) currentPrices.ingredient[key] = val;
+                });
+                localStorage.setItem('app_prices', JSON.stringify(currentPrices));
+                alert('Đã lưu giá mới thành công!');
+            };
+
+            window.restoreDefaultPrices = () => {
+                if(confirm('Bạn có chắc muốn khôi phục lại toàn bộ giá gốc mặc định không?')) {
+                    currentPrices = JSON.parse(JSON.stringify(defaultPrices));
+                    localStorage.removeItem('app_prices');
+                    renderSettingsUI();
+                    alert('Đã khôi phục giá gốc!');
+                }
+            };
+
+            // LOGIC CỘNG TRỪ
+            window.adjustVal = (id, delta) => {
+                const el = document.getElementById(id);
+                let val = parseInt(el.value) || 0;
+                val += delta;
+                if (val < 0) val = 0;
+                el.value = val > 0 ? val : '';
+                saveTemp();
+            };
+
+            // LOGIC GỢI Ý
+            const handleFocus = (e) => {
+                const item = e.target.dataset.item;
+                activeInputId = e.target.id;
+                
+                if (item && presets[item]) {
+                    const options = presets[item].map(val => 
+                        `<button onclick="setPresetVal(${val})" class="flex-none bg-gray-100 text-gray-700 font-bold py-2 px-4 rounded-lg border border-gray-200 active:bg-blue-100 active:text-blue-700 active:border-blue-300 text-sm whitespace-nowrap min-w-[60px]">${val}</button>`
+                    ).join('');
+                    
+                    refs.suggestBar.innerHTML = `<div class="flex items-center px-2 text-[10px] font-bold text-gray-400 uppercase">Gợi ý:</div>` + options;
+                    refs.suggestBar.classList.add('active');
+                    refs.btnCalc.parentElement.style.paddingBottom = '60px'; 
+                } else {
+                    hideSuggest();
+                }
+            };
+
+            const hideSuggest = () => {
+                refs.suggestBar.classList.remove('active');
+                if(refs.btnCalc.parentElement) refs.btnCalc.parentElement.style.paddingBottom = 'env(safe-area-inset-bottom)';
+            };
+
+            window.setPresetVal = (val) => {
+                if(activeInputId) {
+                    const el = document.getElementById(activeInputId);
+                    el.value = val;
+                    saveTemp();
+                }
+            };
+
+            const saveTemp = () => { const d = {}; document.querySelectorAll('.inp').forEach(x => { if(x.value) d[x.id] = x.value; }); localStorage.setItem('app_temp', JSON.stringify(d)); };
+            
+            const inputs = document.querySelectorAll('.inp');
+            inputs.forEach(i => { 
+                i.addEventListener('input', () => { if(i.value < 0) i.value = 0; saveTemp(); }); 
+                i.addEventListener('focus', handleFocus);
+                i.addEventListener('blur', () => setTimeout(hideSuggest, 200)); 
             });
 
-            try {
-                const saved = JSON.parse(localStorage.getItem('app_temp'));
-                if(saved) Object.keys(saved).forEach(k => { if(document.getElementById(k)) document.getElementById(k).value = saved[k]; });
-            } catch(e){}
+            try { const saved = JSON.parse(localStorage.getItem('app_temp')); if(saved) Object.keys(saved).forEach(k => { if(document.getElementById(k)) document.getElementById(k).value = saved[k]; }); } catch(e){}
 
-            // CALCULATE FUNCTION
-            const fmt = n => new Intl.NumberFormat('vi-VN').format(n) + '₫';
-            
+            // TÍNH TOÁN
             refs.btnCalc.addEventListener('click', () => {
                 if(refs.viewInput.classList.contains('hidden')) refs.tabInput.click();
+                let raw = {}, hasData = false, tableHTML = '', totalM = 0, totalB = 0; refs.sales.innerHTML = '';
                 
-                let raw = {}, hasData = false, tableHTML = '', totalM = 0, totalB = 0;
-                refs.sales.innerHTML = '';
+                allItems.forEach(item => { 
+                    const id = item.replace(/\s+/g, '-'); 
+                    const n = parseInt(document.getElementById(`n-${id}`).value)||0; 
+                    const t = parseInt(document.getElementById(`t-${id}`).value)||0; 
+                    
+                    if(n>0||t>0) { 
+                        hasData = true; 
+                        let net = Math.max(0, n-t); 
+                        if (item === 'Tiền lẻ') net = 0;
 
-                allItems.forEach(item => {
-                    const id = item.replace(/\s+/g, '-');
-                    const n = parseInt(document.getElementById(`n-${id}`).value) || 0;
-                    const t = parseInt(document.getElementById(`t-${id}`).value) || 0;
-                    if(n>0 || t>0) {
-                        hasData = true;
-                        const net = Math.max(0, n-t);
-                        raw[item] = net;
-                        tableHTML += `<tr class="border-b border-gray-50 last:border-0"><td class="py-2 px-2 font-medium">${item}</td><td class="py-2 px-1 text-center text-blue-500">${n}</td><td class="py-2 px-1 text-center text-red-400">${t}</td><td class="py-2 px-2 text-right font-bold">${net}</td></tr>`;
-                    } else { raw[item] = 0; }
+                        raw[item] = net; 
+                        
+                        const isMoney = item === 'Tiền lẻ';
+                        const displayNet = isMoney ? '-' : net;
+                        const rowClass = isMoney ? 'bg-yellow-50' : 'border-b border-gray-50 last:border-0';tableHTML += `<tr class="${rowClass}"><td class="py-2 px-2 font-medium">${item}</td><td class="py-2 px-1 text-center text-blue-500">${n}</td><td class="py-2 px-1 text-center text-red-400">${t}</td><td class="py-2 px-2 text-right font-bold">${displayNet}</td></tr>`; 
+                    } else { 
+                        raw[item]=0; 
+                    } 
                 });
 
                 if(!hasData) return alert('Vui lòng nhập số liệu!');
-
-                refs.table.innerHTML = tableHTML;
+                
                 let rem = {...raw};
-
-                // 1. Calc Burgers
-                recipes.forEach(r => {
-                    let c = Infinity;
-                    for(let k in r.ing) {
-                        if((rem[k]||0) === 0) { c = 0; break; }
-                        c = Math.min(c, Math.floor(rem[k]/r.ing[k]));
-                    }
-                    if(c === Infinity) c = 0;
-                    if(c > 0) {
-                        const m = c * prices.product[r.name];
-                        totalM += m; totalB += c;
-                        for(let k in r.ing) rem[k] -= c * r.ing[k];
-                        refs.sales.innerHTML += `<li class="flex justify-between py-1 border-b border-gray-100 last:border-0"><span class="text-gray-800 font-bold">${r.name} <small class="text-gray-400 font-normal">x${c}</small></span><span class="font-bold text-blue-600">${fmt(m)}</span></li>`;
-                    }
+                
+                // Sử dụng currentPrices để tính toán
+                recipes.forEach(r => { 
+                    let c = Infinity; 
+                    for(let k in r.ing) { 
+                        if((rem[k]||0)===0) { c=0; break; } 
+                        c = Math.min(c, Math.floor(rem[k]/r.ing[k])); 
+                    } 
+                    if(c===Infinity) c=0; 
+                    if(c>0) { 
+                        const m = c * currentPrices.product[r.name]; // Use dynamic price
+                        totalM+=m; 
+                        totalB+=c; 
+                        for(let k in r.ing) rem[k]-=c*r.ing[k]; 
+                        refs.sales.innerHTML += `<li class="flex justify-between py-1 border-b border-gray-100 last:border-0"><span class="text-gray-800 font-bold">${r.name} <small class="text-gray-400 font-normal">x${c}</small></span><span class="font-bold text-blue-600">${fmt(m)}</span></li>`; 
+                    } 
                 });
 
-                // 2. Calc Leftovers
-                for(let k in rem) {
-                    if(rem[k] > 0 && prices.ingredient[k]) {
-                        const m = rem[k] * prices.ingredient[k];
-                        totalM += m;
-                        if(k === 'Vỏ bánh') totalB += rem[k];
-                        refs.sales.innerHTML += `<li class="flex justify-between py-1 border-b border-gray-100 last:border-0 text-gray-500"><span>${k} (dư) <small>x${rem[k]}</small></span><span>${fmt(m)}</span></li>`;
-                    }
+                for(let k in rem) { 
+                    if(rem[k]>0 && currentPrices.ingredient[k] && k !== 'Tiền lẻ') { 
+                        const m = rem[k] * currentPrices.ingredient[k]; // Use dynamic price
+                        totalM+=m; 
+                        if(k==='Vỏ bánh') totalB+=rem[k]; 
+                        refs.sales.innerHTML += `<li class="flex justify-between py-1 border-b border-gray-100 last:border-0 text-gray-500"><span>${k} (dư) <small>x${rem[k]}</small></span><span>${fmt(m)}</span></li>`; 
+                    } 
                 }
+                
+                refs.table.innerHTML = tableHTML; 
+                refs.rev.innerText = fmt(totalM); 
+                refs.count.innerText = `Tổng bánh: ${totalB}`; 
+                refs.result.classList.remove('hidden'); 
+                setTimeout(() => { refs.result.scrollIntoView({behavior:'smooth', block:'start'}); }, 100);
 
-                refs.rev.innerText = fmt(totalM);
-                refs.count.innerText = `Tổng bánh: ${totalB}`;
-                refs.result.classList.remove('hidden');
-                refs.result.scrollIntoView({behavior:'smooth', block:'center'});
-
-                currentReport = {
-                    id: Date.now(),
-                    time: new Date().toLocaleString('vi-VN', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'}),
-                    money: totalM, count: totalB,
-                    html: `<div class="mb-2 font-bold text-blue-600 text-xs">CHI TIẾT:</div><ul class="mb-3 text-sm">${refs.sales.innerHTML}</ul><div class="font-bold text-gray-400 text-[10px] uppercase border-t pt-2">BẢNG KÊ GỐC:</div><table class="w-full text-xs text-gray-500 mt-1">${tableHTML}</table>`
-                };
+                currentReport = { id: Date.now(), time: new Date().toLocaleString('vi-VN', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'}), money: totalM, count: totalB, html: `<div class="mb-2 font-bold text-blue-600 text-xs">CHI TIẾT:</div><ul class="mb-3 text-sm">${refs.sales.innerHTML}</ul><div class="font-bold text-gray-400 text-[10px] uppercase border-t pt-2">BẢNG KÊ GỐC:</div><table class="w-full text-xs text-gray-500 mt-1">${tableHTML}</table>` };
             });
 
-            // HISTORY & TABS
-            document.getElementById('save-btn').addEventListener('click', () => {
-                if(!currentReport) return;
-                let h = JSON.parse(localStorage.getItem('app_hist')||'[]');
-                h.unshift(currentReport);
-                localStorage.setItem('app_hist', JSON.stringify(h));
-                alert('Đã lưu!');
-                refs.tabHistory.click();
-            });
-
-            const renderHistory = () => {
-                let h = JSON.parse(localStorage.getItem('app_hist')||'[]');
-                if(h.length === 0) { refs.history.innerHTML = '<div class="text-center text-gray-400 py-10 text-xs">Chưa có lịch sử</div>'; return; }
-                refs.history.innerHTML = h.map(x => `
-                    <div class="bg-white p-3 rounded-lg border border-gray-200 shadow-sm">
-                        <div class="flex justify-between border-b border-gray-100 pb-2 mb-2">
-                            <span class="text-[10px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded">${x.time}</span>
-                            <button onclick="delItem(${x.id})" class="text-xs text-red-500 font-bold px-2">XÓA</button>
-                        </div>
-                        <div class="flex justify-between items-center mb-3">
-                            <span class="text-lg font-black text-blue-600">${fmt(x.money)}</span>
-                            <span class="font-bold text-gray-600 text-xs bg-gray-100 px-2 py-1 rounded-full">${x.count} bánh</span>
-                        </div>
-                        <div class="bg-gray-50 p-2 rounded text-xs text-gray-600 border border-gray-100">${x.html}</div>
-                    </div>`).join('');
+            // COPY, SAVE & HISTORY
+            window.copyToClipboard = (type) => {
+                let header = type === 'n' ? 'NHẬN HÀNG' : 'TRẢ HÀNG';
+                let text = `${header}\n`;
+                let count = 0;
+                dataConfig.forEach(cat => {
+                    cat.items.forEach(item => {
+                        const id = item.replace(/\s+/g, '-');
+                        const el = document.getElementById(`${type}-${id}`);
+                        const val = el.value ? el.value : '';
+                        if(val) { text += `${item}: ${val}\n`; count++; }
+                    });
+                });
+                if(count === 0) return alert('Chưa có dữ liệu nào để copy!');
+                navigator.clipboard.writeText(text).then(() => alert(`Đã copy mẫu ${header}!`)).catch(err => alert('Lỗi copy, thử chọn thủ công.'));
             };
 
-            window.delItem = (id) => { if(confirm('Xóa phiếu này?')) { 
+            document.getElementById('save-btn').addEventListener('click', () => { if(!currentReport) return; let h = JSON.parse(localStorage.getItem('app_hist')||'[]'); h.unshift(currentReport); localStorage.setItem('app_hist', JSON.stringify(h)); alert('Đã lưu!'); refs.tabHistory.click(); });
+            
+            const renderHistory = () => { 
                 let h = JSON.parse(localStorage.getItem('app_hist')||'[]'); 
-                localStorage.setItem('app_hist', JSON.stringify(h.filter(x => x.id !== id))); 
-                renderHistory(); 
-            }};
-
-            document.getElementById('clear-history').addEventListener('click', () => {
-                if(confirm('Xóa hết?')) { localStorage.removeItem('app_hist'); renderHistory(); }
-            });
-
-            document.getElementById('reset-btn').addEventListener('click', () => {
-                if(confirm('Xóa nhập liệu?')) { inputs.forEach(i=>i.value=''); localStorage.removeItem('app_temp'); refs.result.classList.add('hidden'); }
-            });
-
-            const switchTab = (isH) => {
-                refs.viewInput.classList.toggle('hidden', isH);
-                refs.viewHistory.classList.toggle('hidden', !isH);
-                refs.btnCalc.parentElement.classList.toggle('hidden', isH); // Ẩn nút tính khi xem lịch sử
-                refs.tabInput.className = isH ? 'py-3 text-sm font-bold text-gray-400 border-b-2 border-transparent transition-colors' : 'py-3 text-sm font-bold text-blue-600 border-b-2 border-blue-600 transition-colors';
-                refs.tabHistory.className = !isH ? 'py-3 text-sm font-bold text-gray-400 border-b-2 border-transparent transition-colors' : 'py-3 text-sm font-bold text-blue-600 border-b-2 border-blue-600 transition-colors';
-                if(isH) renderHistory();
+                if(h.length===0) { refs.history.innerHTML = '<div class="text-center text-gray-400 py-10 text-xs">Chưa có lịch sử</div>'; return; } 
+                refs.history.innerHTML = h.map(x => {
+                    const d = new Date(x.id);
+                    const dayName = new Intl.DateTimeFormat('vi-VN', { weekday: 'long' }).format(d);
+                    const timeStr = new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit' }).format(d);
+                    return `<div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden"><button onclick="delItem(${x.id})" class="absolute top-2 right-2 text-gray-300 hover:text-red-500 p-2 z-10 active:scale-90 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button><div class="flex items-end gap-3 mb-3"><span class="text-4xl font-black text-gray-300 leading-none">${d.getDate()}</span><div class="flex flex-col pb-0.5"><span class="text-sm font-bold text-gray-700 uppercase leading-none mb-1">${dayName}</span><span class="text-[11px] font-medium text-gray-400 tracking-wide">THÁNG ${d.getMonth() + 1} • ${timeStr}</span></div></div><div class="flex justify-between items-end border-t border-gray-100 pt-3 mt-1"><div><div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Doanh thu</div><div class="text-2xl font-black text-blue-600 tracking-tight leading-none">${fmt(x.money)}</div></div><div class="text-right"><div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Số lượng</div><div class="text-lg font-bold text-gray-600 leading-none">${x.count} <span class="text-xs font-normal text-gray-400">bánh</span></div></div></div></div>`;
+                }).join(''); 
             };
-            refs.tabInput.onclick = () => switchTab(false);
-            refs.tabHistory.onclick = () => switchTab(true);
+            
+            window.delItem = (id) => { if(confirm('Xóa phiếu này?')) { let h = JSON.parse(localStorage.getItem('app_hist')||'[]'); localStorage.setItem('app_hist', JSON.stringify(h.filter(x => x.id !== id))); renderHistory(); }};
+            document.getElementById('clear-history').addEventListener('click', () => { if(confirm('Xóa hết?')) { localStorage.removeItem('app_hist'); renderHistory(); } });
+            document.getElementById('reset-btn').addEventListener('click', () => { if(confirm('Xóa nhập liệu?')) { inputs.forEach(i=>i.value=''); localStorage.removeItem('app_temp'); refs.result.classList.add('hidden'); hideSuggest(); } });
+            
+            // TABS SWITCH LOGIC (Updated for 3 Tabs)
+            const switchTab = (tabName) => { 
+                refs.viewInput.classList.add('hidden');
+                refs.viewHistory.classList.add('hidden');
+                refs.viewSettings.classList.add('hidden');
+                document.getElementById('calc-bar').classList.add('hidden'); // Hide calc bar default
+
+                // Reset styles
+                [refs.tabInput, refs.tabHistory, refs.tabSettings].forEach(t => {
+                    t.className = 'py-3 text-sm font-bold text-gray-400 border-b-2 border-transparent transition-colors';
+                });
+
+                if (tabName === 'input') {
+                    refs.viewInput.classList.remove('hidden');
+                    document.getElementById('calc-bar').classList.remove('hidden');
+                    refs.tabInput.className = 'py-3 text-sm font-bold text-blue-600 border-b-2 border-blue-600 transition-colors';
+                } else if (tabName === 'history') {
+                    refs.viewHistory.classList.remove('hidden');
+                    refs.tabHistory.className = 'py-3 text-sm font-bold text-blue-600 border-b-2 border-blue-600 transition-colors';
+                    renderHistory();
+                } else if (tabName === 'settings') {
+                    refs.viewSettings.classList.remove('hidden');
+                    refs.tabSettings.className = 'py-3 text-sm font-bold text-blue-600 border-b-2 border-blue-600 transition-colors';
+                    renderSettingsUI();
+                }
+                
+                hideSuggest();
+            };
+
+            refs.tabInput.onclick = () => switchTab('input'); 
+            refs.tabHistory.onclick = () => switchTab('history');
+            refs.tabSettings.onclick = () => switchTab('settings');
         });
+    </script>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js');
+            });
+        }
     </script>
 </body>
 </html>

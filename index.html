@@ -7,7 +7,7 @@
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#ffffff">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3075/3075977.png">
+    <link rel="apple-touch-icon" href="hbg.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -70,7 +70,7 @@
             transform: translateY(0);
         }
         
-        /* Settings Input - Đã sửa lỗi hiển thị */
+        /* Settings Input */
         .price-input {
             border: 1px solid #e5e7eb;
             border-radius: 6px;
@@ -110,7 +110,6 @@
         </button>
     </header>
 
-    <!-- Thay đổi grid thành 3 cột -->
     <div class="flex-none grid grid-cols-3 border-b border-gray-200 bg-white z-10">
         <button id="tab-input" class="py-3 text-sm font-bold text-blue-600 border-b-2 border-blue-600 transition-colors">Nhập Kho</button>
         <button id="tab-history" class="py-3 text-sm font-bold text-gray-400 border-b-2 border-transparent transition-colors">Lịch Sử</button>
@@ -165,10 +164,7 @@
                             </div>
                         </div>
                         
-                        <!-- Thanh chọn địa chỉ nhanh -->
-                        <div class="flex gap-2 overflow-x-auto pb-2 mb-3 scrollbar-hide" id="address-list">
-                            <!-- Các nút địa chỉ sẽ được render vào đây -->
-                        </div>
+                        <div class="flex gap-2 overflow-x-auto pb-2 mb-3 scrollbar-hide" id="address-list"></div>
 
                         <button onclick="copyBill()" class="w-full py-3 bg-green-50 text-green-700 border border-green-200 rounded-xl text-sm font-bold shadow-sm active:bg-green-100 active:scale-[0.98] transition flex items-center justify-center gap-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" /></svg>
@@ -244,7 +240,6 @@
             ingredient: { 'Phô mai': 5000, 'Trứng': 2000, 'Bò': 10000, 'Gà': 12000, 'Xúc xích': 12000, 'Tôm': 12000, 'Vỏ bánh': 8000 } 
         };
 
-        // Địa chỉ mặc định
         const defaultAddresses = ['Minh Phụng', 'Bình Thới', 'An Dương Vương', 'Cư Xá', 'Tân Hoà Đông'];
         let currentAddresses = JSON.parse(localStorage.getItem('app_addresses')) || defaultAddresses;
 
@@ -331,7 +326,7 @@
 
             renderAddresses();
 
-            // RENDER SETTINGS (Đã chỉnh sửa hiển thị đ)
+            // RENDER SETTINGS
             const renderSettingsUI = () => {
                 refs.settingsProdList.innerHTML = '';
                 refs.settingsIngList.innerHTML = '';
@@ -415,15 +410,17 @@
                         hasData = true; 
                         let net = Math.max(0, n-t); 
                         
+                        // SỬA ĐỔI: Lấy giá trị ô TRẢ (t) cho Tiền lẻ
                         if (item === 'Tiền lẻ') {
-                            calcResult.tienLe = net; 
+                            calcResult.tienLe = t; // Lưu giá trị ô Trả
                             net = 0; 
                         }
 
                         raw[item] = net; 
                         
+                        // Hiển thị trong bảng (vẫn giữ như cũ cho dễ nhìn)
                         const isMoney = item === 'Tiền lẻ';
-                        const displayNet = isMoney ? calcResult.tienLe : net; 
+                        const displayNet = isMoney ? t : net; 
                         const rowClass = isMoney ? 'bg-yellow-50' : 'border-b border-gray-50 last:border-0';
                         tableHTML += `<tr class="${rowClass}"><td class="py-2 px-2 font-medium">${item}</td><td class="py-2 px-1 text-center text-blue-500">${n}</td><td class="py-2 px-1 text-center text-red-400">${t}</td><td class="py-2 px-2 text-right font-bold">${displayNet}</td></tr>`; 
                     } else { 
@@ -453,15 +450,17 @@
                 currentReport = { id: Date.now(), time: new Date().toLocaleString('vi-VN', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'}), money: totalM, count: totalB, html: `<div class="mb-2 font-bold text-blue-600 text-xs">CHI TIẾT:</div><ul class="mb-3 text-sm">${refs.sales.innerHTML}</ul><div class="font-bold text-gray-400 text-[10px] uppercase border-t pt-2">BẢNG KÊ GỐC:</div><table class="w-full text-xs text-gray-500 mt-1">${tableHTML}</table>` };
             });
 
-            // TÍNH NĂNG COPY MỚI
+            // COPY PHIẾU THANH TOÁN
             window.copyBill = () => {
                 const address = refs.billAddress.value || 'Chưa nhập địa chỉ';
                 const transfer = parseInt(document.getElementById('bill-transfer').value) || 0;
                 const total = calcResult.revenue;
                 const cash = total - transfer;
-                const tienLe = calcResult.tienLe;
+                
+                // SỬA ĐỔI: Tự động nhân 1000 cho Tiền lẻ
+                const tienLeVal = calcResult.tienLe * 1000;
 
-                const text = `${address}\nTiền bánh: ${fmt(total)}\nTiền mặt: ${fmt(cash)}\nChuyển khoản: ${fmt(transfer)}\nTiền lẻ: ${fmt(tienLe)}`;
+                const text = `${address}\nTiền bánh: ${fmt(total)}\nTiền mặt: ${fmt(cash)}\nChuyển khoản: ${fmt(transfer)}\nTiền lẻ: ${fmt(tienLeVal)}`;
                 
                 navigator.clipboard.writeText(text).then(() => {
                     alert('Đã copy phiếu thanh toán!');
@@ -506,6 +505,15 @@
             refs.tabInput.onclick = () => switchTab('input'); refs.tabHistory.onclick = () => switchTab('history'); refs.tabSettings.onclick = () => switchTab('settings');
         });
     </script>
-    <script>if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js'); }); }</script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+                    navigator.serviceWorker.register('./sw.js')
+                        .catch(err => console.log('ServiceWorker registration failed: ', err));
+                }
+            });
+        }
+    </script>
 </body>
 </html>

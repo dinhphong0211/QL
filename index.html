@@ -103,7 +103,8 @@
 <body class="bg-gray-50 text-gray-900 h-[100dvh] flex flex-col overflow-hidden">
 
     <header class="flex-none bg-white border-b border-gray-200 px-4 py-3 flex justify-between items-center shadow-sm z-20">
-        <h1 class="text-lg font-bold text-gray-800 flex items-center gap-2"> 🍔 Kho & Tiền
+        <h1 class="text-lg font-bold text-gray-800 flex items-center gap-2"> 
+            🍔 Kho & Tiền
         </h1>
         <button id="reset-btn" class="text-xs bg-red-50 text-red-600 px-3 py-2 rounded font-bold active:bg-red-100 border border-red-100">
             Reset
@@ -142,16 +143,32 @@
             <div id="result-section" class="hidden mt-6 mb-2">
                 <div class="bg-white rounded-xl border border-blue-100 shadow-sm overflow-hidden">
                     <!-- Tổng Tiền -->
-                    <div class="bg-blue-50 p-4 border-b border-blue-100 flex justify-between items-center">
-                        <div>
-                            <div class="text-xs font-bold text-blue-800 uppercase opacity-70">Tổng Doanh Thu</div>
-                            <div class="text-3xl font-black text-blue-600 tracking-tight" id="total-revenue">0</div>
-                            <div class="text-xs font-semibold text-gray-500 mt-1" id="total-count">0 bánh</div>
+                    <div class="bg-blue-50 p-4 border-b border-blue-100 relative overflow-hidden">
+                        <div class="flex justify-between items-center relative z-10">
+                            <div>
+                                <div class="text-xs font-bold text-blue-800 uppercase opacity-70">Tổng Doanh Thu</div>
+                                <div class="text-3xl font-black text-blue-600 tracking-tight" id="total-revenue">0</div>
+                                <div class="text-xs font-semibold text-gray-500 mt-1" id="total-count">0 bánh</div>
+                            </div>
                         </div>
-                        <button id="save-btn" class="bg-yellow-400 text-yellow-900 text-xs font-bold py-2 px-3 rounded-lg shadow-sm active:scale-95 active:bg-yellow-500 transition">Lưu Phiếu</button>
                     </div>
 
-                    <!-- Phần Thanh Toán & Copy Mới -->
+                    <!-- Phần Lưu Phiếu (Updated: Thêm giờ vào/ra) -->
+                    <div class="p-4 bg-yellow-50 border-b border-yellow-100">
+                        <div class="grid grid-cols-2 gap-3 mb-3">
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Giờ Vào</label>
+                                <input type="time" id="time-in" class="w-full bg-white border border-gray-200 rounded px-2 py-1.5 text-sm font-bold text-gray-700">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Giờ Ra</label>
+                                <input type="time" id="time-out" class="w-full bg-white border border-gray-200 rounded px-2 py-1.5 text-sm font-bold text-gray-700">
+                            </div>
+                        </div>
+                        <button id="save-btn" class="w-full bg-yellow-400 text-yellow-900 text-sm font-bold py-2.5 rounded-lg shadow-sm active:scale-95 active:bg-yellow-500 transition">Lưu Vào Lịch Sử</button>
+                    </div>
+
+                    <!-- Phần Thanh Toán & Copy -->
                     <div class="p-4 bg-white border-b border-gray-100">
                         <div class="grid grid-cols-2 gap-4 mb-3">
                             <div>
@@ -186,11 +203,17 @@
 
         <!-- VIEW 2: LỊCH SỬ -->
         <div id="view-history" class="hidden fade-in pb-4">
-            <div class="flex justify-between items-center mb-4 px-1 sticky top-0 bg-gray-50 py-2 z-10">
-                <h2 class="font-bold text-gray-700 text-sm">Danh sách phiếu đã lưu</h2>
-                <button id="clear-history" class="text-xs text-red-500 font-medium underline p-2">Xóa tất cả</button>
+            <div class="bg-white p-3 border-b border-gray-200 sticky top-0 z-20 shadow-sm">
+                 <div class="flex justify-between items-end mb-2">
+                     <div>
+                         <label class="text-[10px] font-bold text-gray-400 uppercase">Tên nhân viên</label>
+                         <input type="text" id="staff-name" class="block w-full text-lg font-bold text-blue-600 border-b border-gray-300 focus:border-blue-500 outline-none pb-1" placeholder="Nhập tên...">
+                     </div>
+                     <button id="clear-history" class="text-xs text-red-500 font-medium underline pb-1">Xóa tất cả</button>
+                 </div>
             </div>
-            <div id="history-list" class="space-y-3"></div>
+            
+            <div id="history-list" class="space-y-4 p-2"></div>
         </div>
 
         <!-- VIEW 3: CÀI ĐẶT -->
@@ -268,13 +291,24 @@
                 settingsProdList: document.getElementById('settings-product-list'),
                 settingsIngList: document.getElementById('settings-ingredient-list'),
                 addressList: document.getElementById('address-list'),
-                billAddress: document.getElementById('bill-address')
+                billAddress: document.getElementById('bill-address'),
+                staffName: document.getElementById('staff-name'),
+                timeIn: document.getElementById('time-in'),
+                timeOut: document.getElementById('time-out')
             };
 
             let currentReport = null;
             let activeInputId = null;
             const allItems = dataConfig.flatMap(c => c.items);
             const fmt = n => new Intl.NumberFormat('vi-VN').format(n) + '₫';
+
+            // Load Staff Name
+            if(localStorage.getItem('app_staff_name')) {
+                refs.staffName.value = localStorage.getItem('app_staff_name');
+            }
+            refs.staffName.addEventListener('input', (e) => {
+                localStorage.setItem('app_staff_name', e.target.value);
+            });
 
             // RENDER UI CHÍNH
             dataConfig.forEach(cat => {
@@ -389,7 +423,9 @@
                 } else hideSuggest();
             };
             const hideSuggest = () => { refs.suggestBar.classList.remove('active'); if(refs.btnCalc.parentElement) refs.btnCalc.parentElement.style.paddingBottom = 'env(safe-area-inset-bottom)'; };
-            window.setPresetVal = (val) => { if(activeInputId) { const el = document.getElementById(activeInputId); el.value = val; saveTemp(); } };
+            window.setPresetVal = (val) => { 
+                if(activeInputId) { const el = document.getElementById(activeInputId); el.value = val; saveTemp(); } 
+            };
             const saveTemp = () => { const d = {}; document.querySelectorAll('.inp').forEach(x => { if(x.value) d[x.id] = x.value; }); localStorage.setItem('app_temp', JSON.stringify(d)); };
             const inputs = document.querySelectorAll('.inp');
             inputs.forEach(i => { i.addEventListener('input', () => { if(i.value < 0) i.value = 0; saveTemp(); }); i.addEventListener('focus', handleFocus); i.addEventListener('blur', () => setTimeout(hideSuggest, 200)); });
@@ -409,16 +445,8 @@
                     if(n>0||t>0) { 
                         hasData = true; 
                         let net = Math.max(0, n-t); 
-                        
-                        // SỬA ĐỔI: Lấy giá trị ô TRẢ (t) cho Tiền lẻ
-                        if (item === 'Tiền lẻ') {
-                            calcResult.tienLe = t; // Lưu giá trị ô Trả
-                            net = 0; 
-                        }
-
+                        if (item === 'Tiền lẻ') { calcResult.tienLe = t; net = 0; }
                         raw[item] = net; 
-                        
-                        // Hiển thị trong bảng (vẫn giữ như cũ cho dễ nhìn)
                         const isMoney = item === 'Tiền lẻ';
                         const displayNet = isMoney ? t : net; 
                         const rowClass = isMoney ? 'bg-yellow-50' : 'border-b border-gray-50 last:border-0';
@@ -444,10 +472,17 @@
                 refs.table.innerHTML = tableHTML; 
                 refs.rev.innerText = fmt(totalM); 
                 refs.count.innerText = `Tổng bánh: ${totalB}`; 
+                
                 refs.result.classList.remove('hidden'); 
                 setTimeout(() => { refs.result.scrollIntoView({behavior:'smooth', block:'start'}); }, 100);
 
-                currentReport = { id: Date.now(), time: new Date().toLocaleString('vi-VN', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'}), money: totalM, count: totalB, html: `<div class="mb-2 font-bold text-blue-600 text-xs">CHI TIẾT:</div><ul class="mb-3 text-sm">${refs.sales.innerHTML}</ul><div class="font-bold text-gray-400 text-[10px] uppercase border-t pt-2">BẢNG KÊ GỐC:</div><table class="w-full text-xs text-gray-500 mt-1">${tableHTML}</table>` };
+                currentReport = { 
+                    id: Date.now(), 
+                    time: new Date().toLocaleString('vi-VN', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'}), 
+                    money: totalM, 
+                    count: totalB, 
+                    html: `<div class="mb-2 font-bold text-blue-600 text-xs">CHI TIẾT:</div><ul class="mb-3 text-sm">${refs.sales.innerHTML}</ul><div class="font-bold text-gray-400 text-[10px] uppercase border-t pt-2">BẢNG KÊ GỐC:</div><table class="w-full text-xs text-gray-500 mt-1">${tableHTML}</table>`
+                };
             });
 
             // COPY PHIẾU THANH TOÁN
@@ -456,15 +491,9 @@
                 const transfer = parseInt(document.getElementById('bill-transfer').value) || 0;
                 const total = calcResult.revenue;
                 const cash = total - transfer;
-                
-                // SỬA ĐỔI: Tự động nhân 1000 cho Tiền lẻ
                 const tienLeVal = calcResult.tienLe * 1000;
-
                 const text = `${address}\nTiền bánh: ${fmt(total)}\nTiền mặt: ${fmt(cash)}\nChuyển khoản: ${fmt(transfer)}\nTiền lẻ: ${fmt(tienLeVal)}`;
-                
-                navigator.clipboard.writeText(text).then(() => {
-                    alert('Đã copy phiếu thanh toán!');
-                }).catch(err => alert('Lỗi copy!'));
+                navigator.clipboard.writeText(text).then(() => { alert('Đã copy phiếu thanh toán!'); }).catch(err => alert('Lỗi copy!'));
             };
 
             // COPY INPUT/OUTPUT
@@ -476,18 +505,152 @@
                 navigator.clipboard.writeText(text).then(() => alert(`Đã copy mẫu ${header}!`));
             };
 
-            // SAVE & HISTORY
-            document.getElementById('save-btn').addEventListener('click', () => { if(!currentReport) return; let h = JSON.parse(localStorage.getItem('app_hist')||'[]'); h.unshift(currentReport); localStorage.setItem('app_hist', JSON.stringify(h)); alert('Đã lưu!'); refs.tabHistory.click(); });
-            const renderHistory = () => { 
+            // SAVE
+            document.getElementById('save-btn').addEventListener('click', () => { 
+                if(!currentReport) return; 
+                
+                // Lấy giờ vào/ra
+                const tIn = refs.timeIn.value || '';
+                const tOut = refs.timeOut.value || '';
+                
+                // Format giờ để hiển thị đẹp (5h25 thay vì 05:25)
+                const formatTimeSimple = (t) => {
+                    if(!t) return '';
+                    const [h, m] = t.split(':');
+                    return `${parseInt(h)}h${m}`;
+                };
+                
+                // Lưu thêm info vào report
+                currentReport.timeIn = formatTimeSimple(tIn);
+                currentReport.timeOut = formatTimeSimple(tOut);
+                
                 let h = JSON.parse(localStorage.getItem('app_hist')||'[]'); 
-                if(h.length===0) { refs.history.innerHTML = '<div class="text-center text-gray-400 py-10 text-xs">Chưa có lịch sử</div>'; return; } 
-                refs.history.innerHTML = h.map(x => {
-                    const d = new Date(x.id);
-                    const dayName = new Intl.DateTimeFormat('vi-VN', { weekday: 'long' }).format(d);
-                    const timeStr = new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit' }).format(d);
-                    return `<div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden"><button onclick="delItem(${x.id})" class="absolute top-2 right-2 text-gray-300 hover:text-red-500 p-2 z-10 active:scale-90 transition"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button><div class="flex items-end gap-3 mb-3"><span class="text-4xl font-black text-gray-300 leading-none">${d.getDate()}</span><div class="flex flex-col pb-0.5"><span class="text-sm font-bold text-gray-700 uppercase leading-none mb-1">${dayName}</span><span class="text-[11px] font-medium text-gray-400 tracking-wide">THÁNG ${d.getMonth() + 1} • ${timeStr}</span></div></div><div class="flex justify-between items-end border-t border-gray-100 pt-3 mt-1"><div><div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Doanh thu</div><div class="text-2xl font-black text-blue-600 tracking-tight leading-none">${fmt(x.money)}</div></div><div class="text-right"><div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Số lượng</div><div class="text-lg font-bold text-gray-600 leading-none">${x.count} <span class="text-xs font-normal text-gray-400">bánh</span></div></div></div></div>`;
-                }).join(''); 
+                h.unshift(currentReport); 
+                localStorage.setItem('app_hist', JSON.stringify(h)); 
+                alert('Đã lưu!'); 
+                refs.tabHistory.click(); 
+            });
+
+            // RENDER HISTORY (LOGIC TUẦN)
+            const getWeekRange = (date) => {
+                const day = date.getDay(); // 0(Sun) -> 6(Sat)
+                // Tuần bắt đầu từ Thứ 7.
+                // Nếu hôm nay là T7 (6), thì offset = 0.
+                // Nếu CN (0), offset = 1 (T7 là hôm qua).
+                // Nếu T2 (1), offset = 2.
+                // ...
+                // Nếu T6 (5), offset = 6.
+                const offset = (day + 1) % 7;
+                
+                const sat = new Date(date);
+                sat.setDate(date.getDate() - offset);
+                sat.setHours(0,0,0,0);
+                
+                const fri = new Date(sat);
+                fri.setDate(sat.getDate() + 6);
+                fri.setHours(23,59,59,999);
+                
+                return { start: sat, end: fri };
             };
+            
+            const formatDate = (date) => {
+                return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit' }).format(date);
+            };
+
+            const renderHistory = () => { 
+                const staff = refs.staffName.value || 'Chưa nhập tên';
+                let h = JSON.parse(localStorage.getItem('app_hist')||'[]'); 
+                
+                if(h.length===0) { refs.history.innerHTML = '<div class="text-center text-gray-400 py-10 text-xs">Chưa có lịch sử</div>'; return; } 
+
+                // Group by Week
+                const groups = {};
+                h.forEach(item => {
+                    const d = new Date(item.id);
+                    const range = getWeekRange(d);
+                    const key = range.start.getTime(); // Use timestamp as key
+                    if(!groups[key]) groups[key] = { start: range.start, end: range.end, items: [] };
+                    groups[key].items.push(item);
+                });
+
+                // Sort groups descending
+                const sortedKeys = Object.keys(groups).sort((a,b) => b - a);
+                
+                let html = '';
+                sortedKeys.forEach(key => {
+                    const g = groups[key];
+                    const startStr = formatDate(g.start);
+                    const endStr = formatDate(g.end);
+                    
+                    html += `<div class="bg-gray-100 rounded-xl p-3 mb-4 border border-gray-200">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-xs font-bold text-gray-500 uppercase">Tuần: ${startStr} - ${endStr}</h3>
+                            <button onclick="copyWeekReport(${key})" class="bg-white border border-blue-200 text-blue-600 px-3 py-1 rounded text-xs font-bold shadow-sm active:bg-blue-50">COPY BÁO CÁO</button>
+                        </div>
+                        <div class="space-y-2">`;
+                        
+                    g.items.forEach(x => {
+                        const d = new Date(x.id);
+                        const dateStr = formatDate(d);
+                        const dayName = new Intl.DateTimeFormat('vi-VN', { weekday: 'short' }).format(d);
+                        const timeRange = (x.timeIn && x.timeOut) ? `${x.timeIn}-${x.timeOut}` : 'Chưa nhập giờ';
+
+                        html += `
+                        <div class="bg-white p-3 rounded-lg border border-gray-200 shadow-sm relative">
+                            <button onclick="delItem(${x.id})" class="absolute top-2 right-2 text-gray-300 hover:text-red-500 p-1"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+                            <div class="flex justify-between items-start pr-6">
+                                <div>
+                                    <div class="text-sm font-bold text-gray-800">${dayName}, ${dateStr}</div>
+                                    <div class="text-xs text-gray-500 mt-0.5 font-medium">${timeRange}</div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-sm font-black text-blue-600">${fmt(x.money)}</div>
+                                    <div class="text-xs font-bold text-gray-400">${x.count} bánh</div>
+                                </div>
+                            </div>
+                        </div>`;
+                    });
+                    
+                    html += `</div></div>`;
+                });
+                
+                refs.history.innerHTML = html;
+            };
+
+            // COPY BÁO CÁO TUẦN (Logic tạo off)
+            window.copyWeekReport = (weekKey) => {
+                const staff = refs.staffName.value || 'Nhân viên';
+                const rangeStart = new Date(parseInt(weekKey));
+                let h = JSON.parse(localStorage.getItem('app_hist')||'[]');
+                
+                let report = `${staff}\n`;
+                const daysMap = ['Thứ 7', 'Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6'];
+                
+                // Loop 7 ngày từ Thứ 7 -> Thứ 6
+                for(let i=0; i<7; i++) {
+                    const curr = new Date(rangeStart);
+                    curr.setDate(rangeStart.getDate() + i);
+                    
+                    // Tìm log của ngày này
+                    const log = h.find(x => {
+                        const d = new Date(x.id);
+                        return d.getDate() === curr.getDate() && d.getMonth() === curr.getMonth() && d.getFullYear() === curr.getFullYear();
+                    });
+                    
+                    const dateStr = formatDate(curr);
+                    const dayLabel = daysMap[i];
+                    
+                    if(log) {
+                        const range = (log.timeIn && log.timeOut) ? `${log.timeIn}-${log.timeOut}` : '???';
+                        report += `${dayLabel} (${dateStr}): ${range} (${log.count} bánh)\n`;
+                    } else {
+                        report += `${dayLabel} (${dateStr}): off\n`;
+                    }
+                }
+                
+                navigator.clipboard.writeText(report).then(() => alert('Đã copy báo cáo tuần!')).catch(()=>alert('Lỗi copy'));
+            };
+
             window.delItem = (id) => { if(confirm('Xóa phiếu này?')) { let h = JSON.parse(localStorage.getItem('app_hist')||'[]'); localStorage.setItem('app_hist', JSON.stringify(h.filter(x => x.id !== id))); renderHistory(); }};
             document.getElementById('clear-history').addEventListener('click', () => { if(confirm('Xóa hết?')) { localStorage.removeItem('app_hist'); renderHistory(); } });
             document.getElementById('reset-btn').addEventListener('click', () => { if(confirm('Xóa nhập liệu?')) { inputs.forEach(i=>i.value=''); localStorage.removeItem('app_temp'); refs.result.classList.add('hidden'); hideSuggest(); } });
